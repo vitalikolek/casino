@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title th:text="'Sign In | '"></title>
+</head>
+<body class="sing-in__body">
+<div class="sing-in__form">
+    <div class="sing-in__email-box">
+        <div class="sing-in__form-title">Email</div>
+        <input id="login_email" class="input__01" type="text" placeholder="Enter your email">
+    </div>
+    <div class="sing-in__email-box">
+        <div class="sing-in__form-title">Password</div>
+        <label class="input__01-password">
+            <svg width="11" height="12" viewbox="0 0 11 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.625 5.25H9.0625V3.5625C9.0625 1.61719 7.44531 0 5.5 0C3.53125 0 1.9375 1.61719 1.9375 3.5625V5.25H1.375C0.742188 5.25 0.25 5.76562 0.25 6.375V10.875C0.25 11.5078 0.742188 12 1.375 12H9.625C10.2344 12 10.75 11.5078 10.75 10.875V6.375C10.75 5.76562 10.2344 5.25 9.625 5.25ZM7.1875 5.25H3.8125V3.5625C3.8125 2.64844 4.5625 1.875 5.5 1.875C6.41406 1.875 7.1875 2.64844 7.1875 3.5625V5.25Z" fill="#667085"></path>
+            </svg>
+            <input class="input__01" type="password" placeholder="Enter your password" id="login_password">
+        </label>
+    </div>
+
+    <div class="sing-in__params">
+        <label class="checkbox">
+            <input type="checkbox">
+            <span class="checkbox__style"></span>
+            Remember me
+        </label>
+
+        <a class="sing-in__link" href="forgot-password">Forgot password</a>
+    </div>
+
+    <div class="sing-in__btn-box">
+        <button id="sign_in" class="buttons__01 buttons__01-sing-loader" type="submit">
+            Sign in
+        </button>
+    </div>
+
+    <div class="sing-in__have">
+        Don’t have an account?
+        <span><a href="signup">Sign up for free</a></span>
+    </div>
+</div>
+</body>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+</html>
+<script>
+    function disabledBtn(e) {
+        setTimeout(function() {
+            $("#sign_in").removeClass("buttons__disabled");
+            $("#sign_in").removeClass("buttons__loading");
+            $(".button__loader").remove();
+        }, 500);
+    }
+
+    $(document).on("keydown", function(e) {
+        if (e.key === "Enter") {
+            $("#sign_in").click();
+        }
+    });
+
+    $("#sign_in").on("click", function(e) {
+        e.preventDefault();
+
+        var login_password = $("#login_password").val();
+        var login_email = $("#login_email").val();
+
+        if(login_email == '') {
+            noti("Please enter a valid email address", 'warning');
+            disabledBtn("off");
+        } else if(login_password == '') {
+            noti("Please enter password", 'warning');
+            disabledBtn("off");
+        } else {
+            disabledBtn("off");
+
+            //todo: убрать cross domain
+            $.ajax({
+                url: "../api/auth/login",
+                type: "POST",
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
+                contentType: "application/json",
+                data: JSON.stringify({
+                    email: login_email,
+                    password: login_password
+                }),
+                success: function (response, textStatus, status) {
+                    if (status.status === 200) {
+                        if (status.responseText.startsWith("jwt_two_factor")) {
+                            location.replace("signin-2fa?token=" + status.responseText.split('jwt_two_factor: ')[1]);
+                        } else {
+                            setTimeout(function () {
+                                location.replace("/");
+                            }, 500);
+                        }
+                    } else {
+                        noti("An unexpected error has occurred, please try again", "error");
+                    }
+                },
+                error: function (xhr) {
+                    const text = xhr.responseText;
+                    if (text === 'bad_captcha') {
+                        noti("Error receiving captcha, try again later", "error");
+                        return;
+                    }
+
+                    const json = JSON.parse(text);
+                    const error = json["error"];
+                    const captchaUpdate = json["captcha_update"];
+
+                    document.getElementById("captcha_img").src = captchaUpdate;
+
+                    if (error === "wrong_captcha") {
+                        noti("Captcha is wrong", "error");
+                        disabledBtn('on');
+                    } else if (error === 'user_not_found') {
+                        noti("Such user does not exist", "error");
+                        disabledBtn("on");
+                    } else if (error === 'wrong_password') {
+                        noti("Enter the correct password", "error");
+                        disabledBtn("on");
+                    } else {
+                        noti("An unexpected error has occurred, please try again", "error");
+                    }
+                }
+            });
+        }
+    });
+</script>

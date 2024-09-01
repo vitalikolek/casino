@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title th:text="'Create new account'"></title>
+    <link rel="stylesheet" href="assets/css/root.min.css">
+    <link rel="stylesheet" href="assets/css/toastr.css">
+</head>
+<body>
+<div class="sing-in__form">
+    <div class="sing-in__email-box">
+        <div class="sing-in__form-title">Login</div>
+        <input class="input__01" type="text" placeholder="Enter your login" id="username">
+    </div>
+    <div class="sing-in__email-box">
+        <div class="sing-in__form-title">Email</div>
+        <input class="input__01" type="text" placeholder="Enter your email" id="email">
+    </div>
+    <div class="sing-in__email-box">
+        <div class="sing-in__form-title">Password</div>
+        <label class="input__01-password">
+            <svg width="11" height="12" viewbox="0 0 11 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.625 5.25H9.0625V3.5625C9.0625 1.61719 7.44531 0 5.5 0C3.53125 0 1.9375 1.61719 1.9375 3.5625V5.25H1.375C0.742188 5.25 0.25 5.76562 0.25 6.375V10.875C0.25 11.5078 0.742188 12 1.375 12H9.625C10.2344 12 10.75 11.5078 10.75 10.875V6.375C10.75 5.76562 10.2344 5.25 9.625 5.25ZM7.1875 5.25H3.8125V3.5625C3.8125 2.64844 4.5625 1.875 5.5 1.875C6.41406 1.875 7.1875 2.64844 7.1875 3.5625V5.25Z" fill="#667085"></path>
+            </svg>
+            <input class="input__01" type="password" placeholder="Enter your password" id="password">
+        </label>
+    </div>
+    <div class="sing-in__email-box">
+        <div class="sing-in__form-title">Repeat password</div>
+        <label class="input__01-password">
+            <svg width="11" height="12" viewbox="0 0 11 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.625 5.25H9.0625V3.5625C9.0625 1.61719 7.44531 0 5.5 0C3.53125 0 1.9375 1.61719 1.9375 3.5625V5.25H1.375C0.742188 5.25 0.25 5.76562 0.25 6.375V10.875C0.25 11.5078 0.742188 12 1.375 12H9.625C10.2344 12 10.75 11.5078 10.75 10.875V6.375C10.75 5.76562 10.2344 5.25 9.625 5.25ZM7.1875 5.25H3.8125V3.5625C3.8125 2.64844 4.5625 1.875 5.5 1.875C6.41406 1.875 7.1875 2.64844 7.1875 3.5625V5.25Z" fill="#667085"></path>
+            </svg>
+            <input class="input__01" type="password" placeholder="Repeat your password" id="re_password">
+        </label>
+    </div>
+
+    <input type="hidden" th:value="${ref == null ? '' : ref}" id="ref_id">
+    <input type="hidden" th:value="${promo == null ? '' : promo}" id="get_promo">
+
+    <label class="checkbox">
+        <input id="reg_checkbox" type="checkbox" checked="">
+        <span class="checkbox__style"></span>
+        I agree with<a style="margin-left: 3px; color: #7044EE" href="../terms" target="_blank">Terms of service</a>
+    </label>
+
+    <div class="sing-in__btn-box" id="create_account">
+        <a href="#" class="buttons__01 buttons__01-sing-loader">Create account</a>
+    </div>
+
+    <div class="sing-in__have sing-in__have-bef-top">
+        Already have an account?
+        <span><a href="signin">Sign in now</a></span>
+
+    </div>
+
+</div>
+</body>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+</html>
+
+<script>
+    function disabledBtn(e) {
+        setTimeout(function() {
+            $("#create_account").removeClass("buttons__disabled");
+            $("#create_account").removeClass("buttons__loading");
+            $(".button__loader").remove();
+            $(".buttons__01").removeClass("buttons__disabled");
+        }, 500);
+    }
+
+    $(document).on("keydown", function(e) {
+        if (e.key === "Enter") {
+            $("#create_account").click();
+        }
+    });
+
+    $("#create_account").on("click", function(e) {
+        e.preventDefault();
+
+        var username = $("#username").val();
+        var email = $("#email").val();
+        var password = $("#password").val();
+        var re_password = $("#re_password").val();
+        var ref = $("#ref_id").val();
+
+        if ($('#reg_checkbox').is(":checked")) {
+            reg_checkbox = 'true';
+        } else {
+            reg_checkbox = 'false';
+        }
+
+        if(username == '' || username.length < 5) {
+            noti("Username must be more than 5 characters", 'warning');
+            disabledBtn("off");
+        } else if(email == '' || email.length < 10) {
+            noti("Please enter a valid email address", 'warning');
+            disabledBtn("off");
+        } else if(password == '' || password.length < 6) {
+            noti("Password must be at least 6 characters", 'warning');
+            disabledBtn("off");
+        } else if(password != re_password) {
+            noti("Passwords do not match, be careful", 'warning');
+            disabledBtn("off");
+        } else if(reg_checkbox == 'false') {
+            noti("To complete your registration, you should agree with our Terms of service", 'warning');
+            disabledBtn("off");
+        } else {
+            disabledBtn("off");
+
+            $.ajax({
+                url: "../api/auth/register",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    username: username,
+                    password: password,
+                    email: email,
+                    promocode: get_promo,
+                    ref: ref
+                }),
+                success: function (response, textStatus, status) {
+                    if (status.status === 200) {
+                        if (status.responseText !== "email_confirm") {
+                            noti("Account created successfully", "success");
+                            setTimeout(function () {
+                                location.replace("../profile/wallet");
+                            }, 1000);
+                        } else {
+                            noti("Registration is almost complete, please check your email", "success");
+                            showConfirmationEmail("A registration confirmation email has been sent to your mailbox <strong style='color: dodgerblue'>" + email + "</strong><br>If the email didn't arrive, check your spam folder.");
+                            setTimeout(() => location.replace("signin"), 15000);
+                        }
+                    } else {
+                        noti("An unexpected error has occurred, please try again", "error");
+                    }
+                },
+                error: function (xhr) {
+                    const text = xhr.responseText;
+                    if (text === 'bad_captcha') {
+                        noti("Error receiving captcha, try again later", "error");
+                        return;
+                    }
+
+                    const json = JSON.parse(text);
+                    const error = json["error"];
+                    const captchaUpdate = json["captcha_update"];
+
+                    document.getElementById("captcha_img").src = captchaUpdate;
+
+                    if (error === "wrong_captcha") {
+                        noti("Captcha is wrong", "error");
+                        disabledBtn('on');
+                    } else if (error === 'email_not_valid') {
+                        noti("Email not corrected", "error");
+                        disabledBtn("on");
+                    } else if (error === 'username_not_valid') {
+                        noti("The username contains blocked characters, or its length is less than 5 or greater than 32", "error");
+                        disabledBtn("on");
+                    } else if (error === 'password_not_valid') {
+                        noti("Minimum password length - 8 symbols, max - 64 symbols", "error");
+                        disabledBtn("on");
+                    } else if (error === "username_already_taken") {
+                        noti("This username already exists", "error");
+                        disabledBtn("on");
+                    } else if (error === "email_already_taken") {
+                        noti("This email already exists", "error");
+                        disabledBtn("on");
+                    } else {
+                        noti("An unexpected error has occurred, please try again", "error");
+                    }
+                }
+            });
+        }
+    });
+</script>
